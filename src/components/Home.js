@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom"
 import { signOut } from 'firebase/auth'
 import { auth } from '../configs/firebaseConfig'
 import { useDispatch, useSelector } from 'react-redux'
-import { addKeep, editKeep, deleteKeep } from '../redux/keeps/keepSlice'
+import { addKeep, editKeep, deleteKeep, getKeeps, GetKeeps } from '../redux/keeps/keepSlice'
 import { nanoid } from 'nanoid'
+import { store } from '../redux/store'
+import { fetchTodos } from '../redux/keeps/keepSlice'
 
 
 const Home = (currentUser) => {
@@ -13,8 +15,15 @@ const Home = (currentUser) => {
     let authToken = sessionStorage.getItem('Auth Token')
     const [isHidden, setIsHidden] = useState(true)
     const dispatch = useDispatch()
+    
 
     const keeps = useSelector(store => store.keeps);
+    // console.log(keeps)
+
+    useEffect(() => {
+        console.log("dispatching...")
+        dispatch(GetKeeps())
+    }, [keeps])
 
 
     const [isEdit,setIsEdit] = useState(false)
