@@ -11,8 +11,6 @@ import {onAuthStateChanged} from 'firebase/auth';
 import { auth } from "./configs/firebaseConfig";
 
 
-
-
 function App() {
 
   const [user, setUser] = useState({

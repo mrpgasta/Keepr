@@ -1,12 +1,21 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, setDoc, doc} from "firebase/firestore";
+import { collection, addDoc, getDocs, setDoc, doc, deleteDoc, updateDoc} from "firebase/firestore";
 import { db } from "../../configs/firebaseConfig";
+import Keep from "../../entities/Keep"
 
-const initialState = [];
+
+
+const initialState = {
+    keepList: []
+}
+
 
 export const GetKeeps = createAsyncThunk("keeps/GetKeeps", async () => {
+
     const keepCollectionRef = collection(db, "keeps");
-    const data = await keepCollectionRef.where('uid', '==', 'eGRr9pfALUaCwFvcduzWJc7EfXx2').get();
+    // const data = await keepCollectionRef.where('uid', '==', 'YggnPiHePUdQ5wgKrdImSYwM3aC3').get();
+    // console.log('getting data based on your uid...')
+    const data = await getDocs(keepCollectionRef);
     const keeps = []
     data.forEach((doc) => {
         keeps.push({
@@ -16,8 +25,6 @@ export const GetKeeps = createAsyncThunk("keeps/GetKeeps", async () => {
             uid: doc.data().uid
         }); 
     });
-    console.log('on GetKeeps...')
-    // initialState.push(keeps)
     return keeps;
 })
 
@@ -40,29 +47,44 @@ const keepSlice = createSlice({
     },
     editKeep: (state, action) => {
         const { id, label, password, uid } = action.payload;
-        const existingUser = state.find(keep => keep.id === id);
-        if(existingUser) {
-            existingUser.label = label;
-            existingUser.password = password;
+        // const existingUser = state.find(keep => keep.id === id);
+        // if(existingUser) {
+        //     existingUser.label = label;
+        //     existingUser.password = password;
+        // }
+        const editKeep = async () => {
+            const keepRef = doc(db, "keeps", id);
+
+            await updateDoc(keepRef, {
+                label: label,
+                password: password
+            });
         }
+        editKeep();
+
+        return state
     },
     deleteKeep: (state, action) => {
-        const { id } = action.payload;
-        const existingUser = state.find(keep => keep.id === id);
-        if(existingUser) {
-            return state.filter(keep => keep.id !== id);
+        const deleteKeep = async () => {
+            await deleteDoc(doc(db, "keeps", action.payload));
         }
+        deleteKeep();
+
+        return state
     }
     
   },
   extraReducers: (builder) => {
-    // Add reducers for additional action types here, and handle loading state as needed
     builder.addCase(GetKeeps.fulfilled, (state, action) => {
-        console.log(action.payload)
-      // Add user to the state array
-      state.push(action.payload)
+        state.keepList = action.payload
+        // console.log(state.keepList)
     })
-  },
+//   extraReducers: (builder) => {
+//     builder.addCase(GetKeeps.fulfilled, (state, action) => ({
+//         ...state,
+//         keep: action.payload, 
+//     }))
+}
 });
 
 

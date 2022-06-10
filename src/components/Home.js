@@ -4,24 +4,35 @@ import { useNavigate } from "react-router-dom"
 import { signOut } from 'firebase/auth'
 import { auth } from '../configs/firebaseConfig'
 import { useDispatch, useSelector } from 'react-redux'
-import { addKeep, editKeep, deleteKeep, getKeeps, GetKeeps } from '../redux/keeps/keepSlice'
+import { addKeep, editKeep, deleteKeep, GetKeeps } from '../redux/keeps/keepSlice'
 import { nanoid } from 'nanoid'
 import { store } from '../redux/store'
-import { fetchTodos } from '../redux/keeps/keepSlice'
 
 
 const Home = (currentUser) => {
 
     let authToken = sessionStorage.getItem('Auth Token')
     const [isHidden, setIsHidden] = useState(true)
+    const [isHiddenEdit, setIsHiddenEdit] = useState(true)
     const dispatch = useDispatch()
+    const [keepRefresh,setKeepRefresh] = useState(false)
     
 
-    const keeps = useSelector(store => store.keeps);
-    // console.log(keeps)
+    const [showPass,setShowPass] = useState(true)
+    const [shownPass,setShownPass] = useState('')
+
+    const handleShowPass = (id) => {
+        setShowPass(!showPass)
+        setShownPass(id)
+        setCloseAlert(false)
+    }
+    
+
+    const keeps = useSelector(store => store.keeps.keepList);
+    // console.log(currentUser.currentUser.uid)
 
     useEffect(() => {
-        console.log("dispatching...")
+        // console.log("dispatching...")
         dispatch(GetKeeps())
     }, [keeps])
 
@@ -53,36 +64,59 @@ const Home = (currentUser) => {
     const [toDelete,setToDelete] = useState({id:''})
 
     const handleDelete = () => {
-        dispatch(deleteKeep({
-            id: toDelete.id
-        }))
+        dispatch(deleteKeep(toDelete.id))
     }
 
     useEffect(() => {
         handleDelete()
     },[toDelete])
 
-    const renderCards = () => keeps.map(keep => (
+    const renderCards = () => keeps.filter(keepFilter => keepFilter.uid === currentUser.currentUser.uid).map(keep => (
         <div key={keep.id}>
+            
         {isEdit && keep.id === editedField.id ? (
             <div className="p-6 max-w-sm bg-white  rounded-lg border border-orange-500  shadow-md 
             dark:bg-gray-800 dark:border-gray-700">
                 <div>
-                        <h5 className="mb-2 text-2xl font-bold text-orange-600  dark:text-white">
-                            {keep.label}
-                        </h5>
-                        <p className="mb-3 font-normal text-orange-600 dark:text-gray-400">
+                        <div className='flex items-center'>
+                            <h5 className="mb-2 text-2xl font-bold text-orange-600  dark:text-white">
+                                {keep.label}
+                            </h5>
+                            <button onClick={() => handleShowPass(keep.id)} className="inline-flex relative items-center ml-3   cursor-pointer text-orange-500">
+                            {showPass && keep.id === shownPass ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                    </svg>
+                                ):(
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                        <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                        {showPass && keep.id === shownPass ? (
+                                <p className=" mb-3 font-normal text-orange-600  dark:text-gray-400 cursor-pointer">
+                                    {keep.password}
+                                </p>
+                            ):(
+                                <p className=" hidden mb-3 font-normal text-orange-600 bg-orange-100 rounded-lg p-2 dark:text-gray-400 cursor-pointer">
+                                    {keep.password}
+                                </p>
+                            )}           
+                        {/* <p className="mb-3 font-normal text-orange-600 dark:text-gray-400">
                             {keep.password}
-                        </p>
+                        </p> */}
                         <button data-modal-toggle="authentication-modal" className="inline-flex items-center py-2 px-3 text-sm font-medium text-center 
-                        text-white bg-orange-600  rounded-lg hover:bg-white hover:text-orange-600 hover:border hover:border-orange-600 focus:ring-4 focus:outline-none
+                        text-orange-600 bg-white rounded-lg hover:bg-orange-600 hover:text-white border border-orange-600
                         focus:ring-orange-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                         onClick={() => {
                             setEditedField({id: keep.id ,label: keep.label, password: keep.password})
                             onEdit()
                         }}
                         >
-                            Edit
+                            Cancel
                         </button>
                         <button data-modal-toggle="authentication-modal" className="float-right inline-flex items-center py-2 px-3 text-sm font-medium text-center 
                             text-orange-600 = focus:ring-4 focus:outline-none
@@ -103,14 +137,37 @@ const Home = (currentUser) => {
             <div className="p-6 max-w-sm bg-orange-200  rounded-lg border border-orange-500  shadow-md 
                 dark:bg-gray-800 dark:border-gray-700">
                     <div>
-                            <h5 className="mb-2 text-2xl font-bold text-orange-600  dark:text-white">
-                                {keep.label}
-                            </h5>
-                            <p className="mb-3 font-normal text-orange-600 dark:text-gray-400">
-                                {keep.password}
-                            </p>
+                        
+                            <div className='flex items-center'>
+                                <h5 className="mb-2 text-2xl font-bold text-orange-600  dark:text-white">
+                                    {keep.label}
+                                </h5>
+                                
+                                <button onClick={() => handleShowPass(keep.id)} className="inline-flex relative items-center ml-3   cursor-pointer text-orange-500">
+                                    {showPass && keep.id === shownPass ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                        </svg>
+                                    ):(
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>       
+                            {showPass && keep.id === shownPass ? (
+                                <p className=" mb-3 font-normal text-orange-600  dark:text-gray-400 cursor-pointer">
+                                    {keep.password}
+                                </p>
+                            ):(
+                                <p className=" hidden mb-3 font-normal text-orange-600 bg-orange-100 rounded-lg p-2 dark:text-gray-400 cursor-pointer">
+                                    {keep.password}
+                                </p>
+                            )}                  
                             <button data-modal-toggle="authentication-modal" className="inline-flex items-center py-2 px-3 text-sm font-medium text-center 
-                            text-orange-600 bg-white  rounded-lg hover:bg-orange-600 hover:text-white focus:ring-4 focus:outline-none
+                            text-white bg-orange-600 rounded-lg hover:bg-orange-200 hover:text-orange-500 hover:border hover:border-orange-600 focus:ring-4 focus:outline-none
                             focus:ring-orange-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                             onClick={() => {
                                 setEditedField({id: keep.id ,label: keep.label, password: keep.password})
@@ -119,8 +176,8 @@ const Home = (currentUser) => {
                             >
                                 Edit
                             </button>
-                            <button data-modal-toggle="authentication-modal" className="float-right inline-flex items-center py-2 px-3 text-sm font-medium text-center 
-                            text-orange-600 = focus:ring-4 focus:outline-none
+                            <button data-modal-toggle="authentication-modal" className="float-right ml-2 inline-flex items-center py-2 px-3 text-sm font-medium text-center 
+                            text-orange-600 focus:ring-4 focus:outline-none
                             focus:ring-orange-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                             onClick={ () => {
                                 setToDelete({id: keep.id})
@@ -132,6 +189,7 @@ const Home = (currentUser) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
+                            
                     </div>
             </div>
         )}
@@ -166,11 +224,23 @@ const Home = (currentUser) => {
             uid: currentUser.currentUser.uid
         }))
         setValues({ label: '', password: '' });
+        setKeepRefresh(!keepRefresh)
     }
 
     const handleShow = (event) => {
         event.preventDefault()
         setIsHidden(!isHidden)
+    }
+
+    const handleShowOnEdit = (event) => {
+        event.preventDefault()
+        setIsHiddenEdit(!isHiddenEdit)
+    }
+
+    const [closeAlert,setCloseAlert] = useState(false)
+
+    const handleCloseAlert = () => {
+        setCloseAlert(!closeAlert)
     }
 
     return (
@@ -191,12 +261,12 @@ const Home = (currentUser) => {
                 </div>
                 
                 <aside className="w-64" aria-label="Sidebar">
-                    <div className="overflow-y-auto py-4 px-3 bg-white rounded-lg border border-gray-100 dark:bg-gray-800">
+                    <div className="overflow-y-auto py-4 px-3 bg-orange-100 rounded-lg border border-orange-500 dark:bg-gray-800">
                         <ul className="space-y-2">
                             <li>
-                                <a href="#" className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg
+                                <a href="#" className="flex items-center p-2 text-base font-bold text-orange-600 rounded-lg
                                 dark:text-white hover:bg-orange-100 dark:hover:bg-gray-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="black " viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none " viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 <span className="ml-3">Hello {currentUser.currentUser.email}</span>
@@ -242,11 +312,18 @@ const Home = (currentUser) => {
                             onChange={(e) => setValues({ ...values, password: e.target.value })}
                             
                             />
-                            <button onClick={handleShow}>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
+                            <button onClick={handleShow} className="text-orange-600">
+                                {isHidden ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                        <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                    </svg>
+                                ):(
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                    </svg>
+                                )}
                             </button>
                             <label htmlFor="floating_last_name" className="peer-focus:font-medium absolute text-sm 
                             text-gray-500 dark:text-gray-400 duration-300 tr    ansform -translate-y-6 scale-75 
@@ -282,7 +359,7 @@ const Home = (currentUser) => {
                                     </label>
                                 </div>
                                 <div className="relative z-0 w-full mb-6 group flex flex-row">
-                                    <input type={isHidden ? "password" : "text"} name="floating_password" id="floating_password" className="block py-2.5 
+                                    <input type={isHiddenEdit ? "password" : "text"} name="floating_password" id="floating_password" className="block py-2.5 
                                     px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 
                                     appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 
                                     focus:outline-none focus:ring-0 focus:border-orange-500  peer"
@@ -290,11 +367,18 @@ const Home = (currentUser) => {
                                     value={editedField.password || ''}
                                     onChange={(e) => setEditedField({ ...editedField, password: e.target.value })}
                                     />
-                                    <button onClick={handleShow}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
+                                    <button onClick={handleShowOnEdit} className="text-orange-600">
+                                        {isHiddenEdit ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                            </svg>
+                                        ):(
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
                                     </button>
                                     <label htmlFor="floating_last_name" className="peer-focus:font-medium absolute text-sm 
                                     text-gray-500 dark:text-gray-400 duration-300 tr    ansform -translate-y-6 scale-75 
@@ -315,6 +399,41 @@ const Home = (currentUser) => {
                 ):(
                     <div>
 
+                    </div>
+                )}
+                {showPass && !closeAlert?(
+                    <div id="alert-border-1" className="flex p-4 mb-4 bg-orange-100 border-t-4 border-orange-500 dark:bg-blue-200" role="alert">
+                        <svg className="flex-shrink-0 w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+                        <div className="ml-3 text-sm font-medium text-orange-600">
+                        You can only view one password at a time. Subscribe to my patreon to view multiple passwords 😇
+                        </div>
+                        <button type="button" className="ml-auto -mx-1.5 -my-1.5 dark:bg-blue-200 text-orange-600
+                        rounded-lg  p-1.5 dark:hover:bg-blue-300 inline-flex
+                        h-6 w-6" data-dismiss-target="#alert-border-1" aria-label="Close" onClick={handleCloseAlert}>
+                        <span className="sr-only">Dismiss</span>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1
+                                1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                ):(
+                    <div id="alert-border-1" className=" hidden flex p-4 mb-4 bg-orange-100 border-t-4 border-orange-500 dark:bg-blue-200" role="alert">
+                        <svg className="flex-shrink-0 w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+                        <div className="ml-3 text-sm font-medium text-orange-600">
+                        You can only view one password at a time. Subscribe to my patreon to view multiple passwords 😇
+                        </div>
+                        <button type="button" className="ml-auto -mx-1.5 -my-1.5 dark:bg-blue-200 text-orange-600
+                        rounded-lg  p-1.5 dark:hover:bg-blue-300 inline-flex
+                        h-6 w-6" data-dismiss-target="#alert-border-1" aria-label="Close">
+                        <span className="sr-only">Dismiss</span>
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1
+                                1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd">
+                                </path>
+                            </svg>
+                        </button>
                     </div>
                 )}
                 <div className="grid gap-5 md:grid-cols-2">
