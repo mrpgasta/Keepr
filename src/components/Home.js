@@ -32,9 +32,8 @@ const Home = (currentUser) => {
     // console.log(currentUser.currentUser.uid)
 
     useEffect(() => {
-        // console.log("dispatching...")
         dispatch(GetKeeps())
-    }, [keeps])
+    }, [])
 
 
     const [isEdit,setIsEdit] = useState(false)
