@@ -15,7 +15,7 @@ const Home = (currentUser) => {
     const [isHidden, setIsHidden] = useState(true)
     const [isHiddenEdit, setIsHiddenEdit] = useState(true)
     const dispatch = useDispatch()
-    const [keepRefresh,setKeepRefresh] = useState(false)
+
     
 
     const [showPass,setShowPass] = useState(true)
@@ -26,13 +26,33 @@ const Home = (currentUser) => {
         setShownPass(id)
         setCloseAlert(false)
     }
-    
 
     const keeps = useSelector(store => store.keeps.keepList);
+    const { profile, error, loading } = keeps;
+
+    const [keepRefreshOnAdd,setKeepRefreshOnAdd] = useState(false)
+    const [keepRefreshOnEdit,setKeepRefreshOnEdit] = useState(false)
+    const [keepRefreshOnDelete,setKeepRefreshOnDelete] = useState(false)
+
+    //hook for add,edit,delete
+
+    useEffect(() => {
+        if (!profile) {
+            dispatch(GetKeeps(currentUser.currentUser.uid))
+        }
+    }, [dispatch(GetKeeps)])
 
     useEffect(() => {
         dispatch(GetKeeps(currentUser.currentUser.uid))
-    }, [keeps])
+    }, [keepRefreshOnAdd])
+
+    useEffect(() => {
+        dispatch(GetKeeps(currentUser.currentUser.uid))
+    }, [keepRefreshOnEdit])
+
+    useEffect(() => {
+        dispatch(GetKeeps(currentUser.currentUser.uid))
+    }, [keepRefreshOnDelete])
 
 
     const [isEdit,setIsEdit] = useState(false)
@@ -57,6 +77,7 @@ const Home = (currentUser) => {
         }))
         setIsEdit(!isEdit)
         setEditedField({label: '',password: ''})
+        setKeepRefreshOnEdit(!keepRefreshOnEdit)
     }
 
     const [toDelete,setToDelete] = useState({id:''})
@@ -122,6 +143,7 @@ const Home = (currentUser) => {
                             onClick={ () => {
                                 setToDelete({id: keep.id})
                                 handleDelete()
+                                setKeepRefreshOnDelete(!keepRefreshOnDelete)
                             }}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 hover:animate-bounce" 
@@ -180,6 +202,7 @@ const Home = (currentUser) => {
                             onClick={ () => {
                                 setToDelete({id: keep.id})
                                 handleDelete()
+                                setKeepRefreshOnDelete(!keepRefreshOnDelete)
                             }}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 hover:animate-bounce" 
@@ -222,7 +245,7 @@ const Home = (currentUser) => {
             uid: currentUser.currentUser.uid
         }))
         setValues({ label: '', password: '' });
-        setKeepRefresh(!keepRefresh)
+        setKeepRefreshOnAdd(!keepRefreshOnAdd)
     }
 
     const handleShow = (event) => {
