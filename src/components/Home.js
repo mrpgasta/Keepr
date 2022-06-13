@@ -32,8 +32,8 @@ const Home = (currentUser) => {
     // console.log(currentUser.currentUser.uid)
 
     useEffect(() => {
-        dispatch(GetKeeps())
-    }, [])
+        dispatch(GetKeeps(currentUser.currentUser.uid))
+    }, [keeps])
 
 
     const [isEdit,setIsEdit] = useState(false)
@@ -68,9 +68,9 @@ const Home = (currentUser) => {
 
     useEffect(() => {
         handleDelete()
-    },[toDelete])
+    },[])
 
-    const renderCards = () => keeps.filter(keepFilter => keepFilter.uid === currentUser.currentUser.uid).map(keep => (
+    const renderCards = () => keeps.map(keep => (
         <div key={keep.id}>
             
         {isEdit && keep.id === editedField.id ? (

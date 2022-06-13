@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, setDoc, doc, deleteDoc, updateDoc} from "firebase/firestore";
+import { collection, getDocs, setDoc, doc, deleteDoc, updateDoc, query,where} from "firebase/firestore";
 import { db } from "../../configs/firebaseConfig";
-import Keep from "../../entities/Keep"
 
 
 
@@ -10,12 +9,14 @@ const initialState = {
 }
 
 
-export const GetKeeps = createAsyncThunk("keeps/GetKeeps", async () => {
+export const GetKeeps = createAsyncThunk("keeps/GetKeeps", async (currentUID) => {
+    console.log(currentUID)
 
-    const keepCollectionRef = collection(db, "keeps");
+    const keepCollectionRef = query(collection(db, "keeps"), where("uid", "==", currentUID));
     // const data = await keepCollectionRef.where('uid', '==', 'YggnPiHePUdQ5wgKrdImSYwM3aC3').get();
     // console.log('getting data based on your uid...')
     const data = await getDocs(keepCollectionRef);
+    console.log(data)
     const keeps = []
     data.forEach((doc) => {
         keeps.push({
