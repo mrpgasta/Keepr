@@ -10,13 +10,9 @@ const initialState = {
 
 
 export const GetKeeps = createAsyncThunk("keeps/GetKeeps", async (currentUID) => {
-    console.log(currentUID)
 
     const keepCollectionRef = query(collection(db, "keeps"), where("uid", "==", currentUID));
-    // const data = await keepCollectionRef.where('uid', '==', 'YggnPiHePUdQ5wgKrdImSYwM3aC3').get();
-    // console.log('getting data based on your uid...')
     const data = await getDocs(keepCollectionRef);
-    console.log(data)
     const keeps = []
     data.forEach((doc) => {
         keeps.push({
@@ -78,7 +74,6 @@ const keepSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(GetKeeps.fulfilled, (state, action) => {
         state.keepList = action.payload
-        // console.log(state.keepList)
     })
 //   extraReducers: (builder) => {
 //     builder.addCase(GetKeeps.fulfilled, (state, action) => ({

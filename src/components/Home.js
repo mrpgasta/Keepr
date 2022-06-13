@@ -29,7 +29,6 @@ const Home = (currentUser) => {
     
 
     const keeps = useSelector(store => store.keeps.keepList);
-    // console.log(currentUser.currentUser.uid)
 
     useEffect(() => {
         dispatch(GetKeeps(currentUser.currentUser.uid))
@@ -68,7 +67,7 @@ const Home = (currentUser) => {
 
     useEffect(() => {
         handleDelete()
-    },[])
+    },[toDelete])
 
     const renderCards = () => keeps.map(keep => (
         <div key={keep.id}>

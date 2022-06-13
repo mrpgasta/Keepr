@@ -26,8 +26,6 @@ function App() {
       }
       if(currentuser){
         navigate('/home')
-        console.log("logging in...")
-        console.log(currentuser.uid)
         setUser({
           email: currentuser.email,
           uid: currentuser.uid
